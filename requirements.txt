@@ -1,0 +1,11 @@
+flask>=2.3.0
+flask-cors>=4.0.0
+gitpython>=3.1.44
+ipykernel>=6.30.0
+langchain-core>=0.3.72
+langchain-openai>=0.3.28
+langchain-together>=0.3.0
+langchain[anthropic]>=0.3.26
+langgraph>=0.5.4
+python-dotenv>=1.1.1
+typing-extensions>=4.14.1 

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not Cursor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .input-container {
+            width: 60%;
+            margin-bottom: 2rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .input-bar {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px 60px 15px 20px;
+            background-color: #000;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            outline: none;
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-bar:focus {
+            box-shadow: 
+                0 0 30px rgba(255, 255, 255, 0.5),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+        }
+
+        .input-bar::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .execute-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 34px;
+            height: 34px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .execute-icon:hover {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+        }
+
+        .execute-icon:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .execute-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: #000;
+        }
+
+        .execute-icon:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: translateY(-50%);
+        }
+
+        .execute-icon:disabled:hover {
+            transform: translateY(-50%);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .output-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .output-line {
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            display: none;
+            color: #fff;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .success {
+            color: #51cf66;
+        }
+
+        .info {
+            color: #74c0fc;
+        }
+
+        .warning {
+            color: #ffd43b;
+        }
+
+        /* Scrollbar styling */
+        .output-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .output-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .output-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background-color: #fff;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Not Cursor</h1>
+        
+        <div class="input-container">
+            <input type="text" id="promptInput" class="input-bar" placeholder="Enter your prompt here..." />
+            <div id="executeIcon" class="execute-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading">Processing...</div>
+        
+        <div id="outputContainer" class="output-container">
+            <div class="output-line">Ready to execute prompts...</div>
+        </div>
+    </div>
+
+    <script>
+        const promptInput = document.getElementById('promptInput');
+        const executeIcon = document.getElementById('executeIcon');
+        const loading = document.getElementById('loading');
+        const outputContainer = document.getElementById('outputContainer');
+        let eventSource = null;
+
+        function addOutputLine(text, type = 'normal') {
+            const line = document.createElement('div');
+            line.className = `output-line ${type}`;
+            
+            // Check if the text contains GitHub URLs and make them clickable
+            if (text.includes('GitHub:') || text.includes('Pull Request:')) {
+                const parts = text.split(': ');
+                if (parts.length === 2) {
+                    const label = parts[0];
+                    const url = parts[1];
+                    line.innerHTML = `${label}: <a href="${url}" target="_blank" style="color: #74c0fc; text-decoration: underline;">${url}</a>`;
+                } else {
+                    line.textContent = text;
+                }
+            } else {
+                line.textContent = text;
+            }
+            
+            outputContainer.appendChild(line);
+            outputContainer.scrollTop = outputContainer.scrollHeight;
+        }
+
+        function clearOutput() {
+            outputContainer.innerHTML = '';
+        }
+
+        function setLoading(isLoading) {
+            loading.style.display = isLoading ? 'block' : 'none';
+            executeIcon.disabled = isLoading;
+            promptInput.disabled = isLoading;
+        }
+
+        function startStreaming() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource('/stream');
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'output') {
+                    let type = 'normal';
+                    if (data.message.includes('❌')) type = 'error';
+                    else if (data.message.includes('✅')) type = 'success';
+                    else if (data.message.includes('📋') || data.message.includes('⏭️')) type = 'warning';
+                    else if (data.message.includes('Files loaded:') || data.message.includes('Commits:')) type = 'info';
+                    else if (data.message.includes('🎉')) type = 'success';
+                    
+                    addOutputLine(data.message, type);
+                } else if (data.type === 'done') {
+                    eventSource.close();
+                    setLoading(false);
+                    addOutputLine('Execution completed!', 'success');
+                }
+            };
+
+            eventSource.onerror = function(event) {
+                console.error('EventSource failed:', event);
+                eventSource.close();
+                setLoading(false);
+                addOutputLine('Connection error. Please try again.', 'error');
+            };
+        }
+
+        async function executePrompt() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                addOutputLine('Please enter a prompt', 'error');
+                return;
+            }
+
+            clearOutput();
+            setLoading(true);
+            addOutputLine(`Executing: ${prompt}`, 'info');
+
+            try {
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    addOutputLine(`Error: ${data.error}`, 'error');
+                    setLoading(false);
+                } else {
+                    // Start streaming output
+                    startStreaming();
+                }
+
+            } catch (error) {
+                addOutputLine(`Network error: ${error.message}`, 'error');
+                setLoading(false);
+            }
+        }
+
+        executeIcon.addEventListener('click', executePrompt);
+        
+        promptInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executePrompt();
+            }
+        });
+
+        // Focus on input when page loads
+        promptInput.focus();
+    </script>
+</body>
+</html> 
